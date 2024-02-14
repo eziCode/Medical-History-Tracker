@@ -80,29 +80,67 @@ const AddIntentHandler = {
         const hours = currentDate.getHours() % 24;
         formattedDateTime = formattedDateTime.replace(/\d{2}(?=:)/, ('0' + hours).slice(-2));
         
-        console.log(formattedDateTime);
-        
-        // UUID -> {Timestamp: (Event, Duration)}
-        
-        
         const docClient = new AWS.DynamoDB.DocumentClient();
         const tableName = '7b34249d-22ae-4856-a774-2befb4685d5e';
         
-        let newData = {
+        const params = {
             TableName: tableName,
-            Item: {
-                'id': userId,
-                'timestamp': formattedDateTime,
-                'name': { name },
-                'event': { event },
-                'duration': { duration }
+            Key: {
+                'id': userId
             }
         }
         
-        docClient.put(newData, (err, data) => {
-            if (err) {
-                console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
-            }
+        docClient.get(params, (err, data) => {
+           if (err) {
+               console.error("Unable to read in data");
+           } else {
+               if (data.Item) {
+                   const updateParams = {
+                        TableName: tableName,
+                        Key: {
+                            'id': userId
+                        },
+                        UpdateExpression: 'SET #ts = list_append(#ts, :vals), #ns = list_append(#ns, :names), #es = list_append(#es, :events), #ds = list_append(#ds, :durations)',
+                        ExpressionAttributeNames: {
+                            '#ts': 'timestamp',
+                            '#ns': 'name',
+                            '#es': 'event',
+                            '#ds': 'duration'
+                        },
+                        ExpressionAttributeValues: {
+                            ':vals': [formattedDateTime],
+                            ':names': [name],
+                            ':events': [event],
+                            ':durations': [duration]
+                        },
+                        ReturnValues: 'UPDATED_NEW'
+                    };
+                    docClient.update(updateParams, (err, data) => {
+                        if (err) {
+                            console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
+                        }
+                    });
+               } else {
+                   const newData = {
+                        TableName: tableName,
+                        Item: {
+                            'id': userId,
+                            'timestamp': [formattedDateTime],
+                            'name': [name],
+                            'event': [event],
+                            'duration': [duration]
+                        }
+                    };
+
+                    docClient.put(newData, (err, data) => {
+                        if (err) {
+                            console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+                        } else {
+                            console.log("PutItem succeeded:", JSON.stringify(data, null, 2));
+                        }
+                    });
+               }
+           }
         });
         
         const speechText = "putting in cloud now";
