@@ -63,13 +63,11 @@ const AddIntentHandler = {
         const { requestEnvelope, responseBuilder } = handlerInput;
         const userId = handlerInput.requestEnvelope.session.user.userId;
         const name = Alexa.getSlotValue(requestEnvelope, 'name');
-        const event = Alexa.getSlotValue(requestEnvelope, 'event')
+        const event = Alexa.getSlotValue(requestEnvelope, 'event');
         const duration = Alexa.getSlotValue(requestEnvelope, 'number_of_minutes');
         
-        console.log("Duration: ", duration)
-        
         const currentDate = new Date();
-        const formattedDateTime = currentDate.toLocaleString('en-US', {
+        let formattedDateTime = currentDate.toLocaleString('en-US', {
           month: '2-digit',
           day: '2-digit',
           year: 'numeric',
@@ -78,6 +76,11 @@ const AddIntentHandler = {
           second: '2-digit',
           hour12: false
         });
+        
+        const hours = currentDate.getHours() % 24;
+        formattedDateTime = formattedDateTime.replace(/\d{2}(?=:)/, ('0' + hours).slice(-2));
+        
+        console.log(formattedDateTime);
         
         // UUID -> {Timestamp: (Event, Duration)}
         
@@ -89,6 +92,7 @@ const AddIntentHandler = {
             TableName: tableName,
             Item: {
                 'id': userId,
+                'timestamp': formattedDateTime,
                 'name': { name },
                 'event': { event },
                 'duration': { duration }
