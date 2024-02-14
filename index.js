@@ -54,17 +54,17 @@ const RetrieveIntentHandler = {
     }
 };
 
-const AddIntentHandler = {
+const AddMedicalActivityIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AddIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AddMedicalActivityIntent';
     },
     handle(handlerInput) {
         const { requestEnvelope, responseBuilder } = handlerInput;
         const userId = handlerInput.requestEnvelope.session.user.userId;
-        const name = Alexa.getSlotValue(requestEnvelope, 'name');
-        const event = Alexa.getSlotValue(requestEnvelope, 'event');
-        const duration = Alexa.getSlotValue(requestEnvelope, 'number_of_minutes');
+        const name = Alexa.getSlotValue(requestEnvelope, 'name') || "N/A";
+        const event = Alexa.getSlotValue(requestEnvelope, 'event') || "Undefined";
+        const duration = Alexa.getSlotValue(requestEnvelope, 'number_of_minutes') || "-1";
         
         const currentDate = new Date();
         let formattedDateTime = currentDate.toLocaleString('en-US', {
@@ -144,9 +144,6 @@ const AddIntentHandler = {
         });
         
         const speechText = "putting in cloud now";
-        
-        
-        // Put into DynamoDB Table
 
         return responseBuilder
             .speak(speechText)
@@ -267,7 +264,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         RetrieveIntentHandler,
-        AddIntentHandler,
+        AddMedicalActivityIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         FallbackIntentHandler,
