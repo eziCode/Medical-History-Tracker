@@ -66,6 +66,8 @@ const AddIntentHandler = {
         const event = Alexa.getSlotValue(requestEnvelope, 'event')
         const duration = Alexa.getSlotValue(requestEnvelope, 'number_of_minutes');
         
+        console.log("Duration: ", duration)
+        
         const currentDate = new Date();
         const formattedDateTime = currentDate.toLocaleString('en-US', {
           month: '2-digit',
@@ -79,53 +81,24 @@ const AddIntentHandler = {
         
         // UUID -> {Timestamp: (Event, Duration)}
         
-        console.log(event);
-        
-        const data = {
-            [formattedDateTime]: {event, duration}
-        };
         
         const docClient = new AWS.DynamoDB.DocumentClient();
         const tableName = '7b34249d-22ae-4856-a774-2befb4685d5e';
         
-        const newData = {
+        let newData = {
             TableName: tableName,
             Item: {
                 'id': userId,
-                Data: data
+                'name': { name },
+                'event': { event },
+                'duration': { duration }
             }
         }
         
-        const paramsGet = {
-            TableName: tableName,
-            Key: {
-                'id': userId,
+        docClient.put(newData, (err, data) => {
+            if (err) {
+                console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
             }
-        }
-        
-        docClient.get(paramsGet, (err, data) => {
-           if (err) {
-               console.error("Error occured upon retrieval: ", JSON.stringify(err, null, 2));
-           } else {
-               let userData = data.Item ? data.Item.Data : {};
-               
-               // Issue in merge
-               userData = Object.assign({}, userData, data.Item.Data, { [formattedDateTime]: { event, duration } });
-               
-               const paramsPut = {
-                    TableName: tableName,
-                    Item: {
-                        'id': userId,
-                        Data: userData
-                    }
-                };
-                
-            docClient.put(newData, (err, data) => {
-                if (err) {
-                    console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
-                }
-            });
-           }
         });
         
         const speechText = "putting in cloud now";
